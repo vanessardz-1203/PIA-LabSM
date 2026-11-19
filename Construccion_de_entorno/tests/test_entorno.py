@@ -9,8 +9,9 @@ import random
 from simulacion.cobertura import (
     calcular_cobertura,
     celdas_visibles,
-    colocar_drones_aleatorios,
     cobertura_por_sector,
+    cobertura_prioritaria,
+    colocar_drones_aleatorios,
     hay_linea_de_vista,
     linea_bresenham,
 )
@@ -19,6 +20,7 @@ from simulacion.entorno import (
     Entorno,
     es_conectado,
     generar_mapa_industrial,
+    mapa_ascii,
 )
 
 
@@ -170,6 +172,62 @@ def test_colocacion_aleatoria_valida():
     posiciones = colocar_drones_aleatorios(mapa, 8, random.Random(9))
     assert len(set(posiciones)) == 8
     assert all(mapa.es_transitable(p) for p in posiciones)
+
+
+# ---- sectores prioritarios y validaciones (revisión Etapa 1) ----------------
+def test_sectores_prioritarios_por_defecto_y_explicitos():
+    mapa_default = _mapa_base()
+    ids_default = [s.id for s in mapa_default.sectores_prioritarios()]
+    assert ids_default == [0, 3]
+    assert mapa_default.celdas_prioritarias()
+    for c in mapa_default.celdas_prioritarias():
+        assert mapa_default.es_celda_prioritaria(c)
+
+    mapa_custom = generar_mapa_industrial(
+        ancho=40, alto=30, semilla=42, sectores_prioritarios=(1,), peso_prioritario=3.0
+    )
+    prioritarios = mapa_custom.sectores_prioritarios()
+    assert [s.id for s in prioritarios] == [1]
+    assert prioritarios[0].peso == 3.0
+
+
+def test_sectores_prioritarios_fuera_de_rango_falla():
+    try:
+        generar_mapa_industrial(ancho=40, alto=30, semilla=42, sectores_prioritarios=(99,))
+    except ValueError:
+        return
+    raise AssertionError("Debió lanzar ValueError para un ID de sector inválido")
+
+
+def test_mapa_ascii_muestra_sectores_prioritarios():
+    mapa = _mapa_base()
+    ascii_normal = mapa_ascii(mapa)
+    ascii_prio = mapa_ascii(mapa, mostrar_prioritarios=True)
+    assert "*" not in ascii_normal
+    assert "*" in ascii_prio
+
+
+def test_celdas_visibles_desde_posicion_no_transitable_es_vacio():
+    e = Entorno(ancho=5, alto=5, edificios={(2, 2)})
+    assert celdas_visibles(e, (2, 2), radio=3) == set()
+    assert celdas_visibles(e, (-1, 0), radio=3) == set()
+    assert celdas_visibles(e, (1, 1), radio=-1) == set()
+
+
+def test_cobertura_prioritaria_en_rango_y_exacta():
+    mapa = generar_mapa_industrial(ancho=40, alto=30, semilla=42, sectores_prioritarios=(0,))
+    res_todo = calcular_cobertura(mapa, [(0, 0)], radio=100, usar_linea_de_vista=False)
+    assert cobertura_prioritaria(mapa, res_todo) == 1.0
+
+    posiciones = colocar_drones_aleatorios(mapa, 4, random.Random(11))
+    res = calcular_cobertura(mapa, posiciones, radio=5)
+    cob_prio = cobertura_prioritaria(mapa, res)
+    assert 0.0 <= cob_prio <= 1.0
+
+    mapa_sin_prio = generar_mapa_industrial(
+        ancho=40, alto=30, semilla=42, sectores_prioritarios=()
+    )
+    assert cobertura_prioritaria(mapa_sin_prio, res_todo) == 0.0
 
 
 # ---- ejecución directa sin pytest (útil si pytest no está instalado) ---------

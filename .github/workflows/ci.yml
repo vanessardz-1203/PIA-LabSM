@@ -1,0 +1,25 @@
+name: CI — Pruebas y Validación Multiagente
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  docker-tests:
+    name: Build Docker, Compile Check y Pytest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Construir imagen Docker reproducible
+        run: docker build -t pia-drones:ci .
+
+      - name: Verificar sintaxis de todas las etapas
+        run: docker run --rm pia-drones:ci python -m compileall -q Construccion_de_entorno Programacion_de_agentes
+
+      - name: Ejecutar suite completa de pruebas unitarias (Etapa 1 y Etapa 2)
+        run: docker run --rm pia-drones:ci pytest -v

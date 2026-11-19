@@ -81,9 +81,12 @@ def main():
         sectores_x=config.SECTORES_X,
         sectores_y=config.SECTORES_Y,
         semilla=config.SEMILLA_MAPA,
+        # Modificación Etapa 1: configura sectores prioritarios desde config.py
+        sectores_prioritarios=config.SECTORES_PRIORITARIOS,
+        peso_prioritario=config.PESO_SECTOR_PRIORITARIO,
     )
-    print("Mapa de la instalación (# edificio, R recarga, . libre):\n")
-    print(mapa_ascii(entorno))
+    print("Mapa de la instalación (# edificio, R recarga, * prioritario, . libre):\n")
+    print(mapa_ascii(entorno, mostrar_prioritarios=True))
     print()
 
     filas = ejecutar_experimento_cobertura(

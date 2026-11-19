@@ -1,0 +1,9 @@
+arquitectura,drones,pasos,radio,cobertura_inst_media_pct,cobertura_acum_media_pct,cobertura_acum_desv_pct,cobertura_prio_media_pct,cobertura_prio_acum_pct,tiempo_sin_vigilancia_medio,redundancia_media_pct,eficiencia_patrullaje_pct
+reactivo,1,100,5,5.98,16.93,5.45,8.82,22.9,44.68,0.0,39.8
+basado_en_modelos,1,100,5,5.25,52.32,7.37,7.36,65.92,38.31,0.0,93.14
+reactivo,2,100,5,11.99,33.76,6.89,16.87,43.32,38.9,0.08,40.4
+basado_en_modelos,2,100,5,10.39,71.94,11.52,14.59,85.77,30.34,0.3,93.33
+reactivo,4,100,5,22.09,54.24,9.37,31.09,68.8,30.83,1.96,41.58
+basado_en_modelos,4,100,5,19.32,89.1,6.82,26.72,98.36,21.18,1.91,93.73
+reactivo,6,100,5,29.46,64.94,8.69,41.83,79.52,26.0,6.17,41.39
+basado_en_modelos,6,100,5,26.16,92.46,5.52,35.9,99.71,17.31,4.92,93.58

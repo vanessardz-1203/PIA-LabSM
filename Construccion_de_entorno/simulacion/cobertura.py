@@ -1,10 +1,15 @@
 """
 Integrante 1 · Cobertura de vigilancia
 
-Responde tres preguntas:
+Responde cuatro preguntas:
   1. ¿Qué celdas ve un dron desde su posición? (visibilidad)
   2. ¿Qué porcentaje del mapa está vigilado? (cobertura)
   3. ¿Qué celdas nadie ve y cuáles ve más de un dron? (puntos ciegos y redundancia)
+  4. ¿Qué porcentaje de los sectores prioritarios está vigilado? (cobertura prioritaria)
+
+Modificación documentada (revisión Etapa 1):
+  - `celdas_visibles` valida que la posición del dron sea transitable.
+  - Se añadió `cobertura_prioritaria` para medir cobertura en sectores prioritarios.
 """
 from __future__ import annotations
 
@@ -13,7 +18,8 @@ import random
 from collections import Counter
 from dataclasses import dataclass
 
-from simulacion.entorno import Celda, Entorno
+# Modificación Etapa 1: import relativo para permitir reutilización desde otras carpetas de etapa
+from .entorno import Celda, Entorno
 
 
 # ---- visibilidad -----------------------------------------------------------
@@ -48,7 +54,15 @@ def hay_linea_de_vista(entorno: Entorno, origen: Celda, destino: Celda) -> bool:
 
 def celdas_visibles(entorno: Entorno, posicion: Celda, radio: float,
                     usar_linea_de_vista: bool = True) -> set[Celda]:
-    """Celdas transitables dentro del radio de observación y con visión libre."""
+    """Celdas transitables dentro del radio de observación y con visión libre.
+
+    Si ``posicion`` está fuera de los límites o coincide con un edificio,
+    retorna un conjunto vacío.
+    """
+    # Modificación Etapa 1: evita calcular visibilidad desde celdas no transitables
+    if not entorno.es_transitable(posicion) or radio < 0:
+        return set()
+
     px, py = posicion
     r = math.ceil(radio)
     visibles: set[Celda] = set()
@@ -74,10 +88,12 @@ class ResultadoCobertura:
 
     @property
     def cubiertas(self) -> set[Celda]:
+        """Subconjunto de celdas objetivo observadas por al menos un dron."""
         return {c for c in self.objetivo if self.veces_vista[c] > 0}
 
     @property
     def puntos_ciegos(self) -> set[Celda]:
+        """Subconjunto de celdas objetivo que ningún dron observa."""
         return self.objetivo - self.cubiertas
 
     @property
@@ -120,6 +136,19 @@ def cobertura_por_sector(entorno: Entorno, resultado: ResultadoCobertura) -> dic
         cubiertas = sum(1 for c in sector.celdas if resultado.veces_vista[c] > 0)
         salida[sector.id] = cubiertas / len(sector.celdas)
     return salida
+
+
+def cobertura_prioritaria(entorno: Entorno, resultado: ResultadoCobertura) -> float:
+    """Fracción de cobertura (0 a 1) considerando solo sectores prioritarios.
+
+    Modificación Etapa 1: permite cuantificar la vigilancia sobre zonas críticas.
+    Retorna ``0.0`` si el entorno no define celdas prioritarias.
+    """
+    prioritarias = entorno.celdas_prioritarias()
+    if not prioritarias:
+        return 0.0
+    cubiertas = sum(1 for c in prioritarias if resultado.veces_vista[c] > 0)
+    return cubiertas / len(prioritarias)
 
 
 # ---- colocación de drones ---------------------------------------------------
