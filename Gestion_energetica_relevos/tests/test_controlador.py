@@ -98,3 +98,68 @@ def test_controlador_relevo_por_ticks(mecanismo):
     assert coordinador.asignacion_de(original.id) is None
     assert coordinador.asignacion_de(sustituto.id) == 1
     assert sustituto.estado_operativo == EstadoOperativo.VIGILANDO
+
+def test_regreso_a_recarga_por_ticks():
+    entorno = Entorno(
+        ancho=6,
+        alto=6,
+        recargas={(0, 0)},
+        sectores=[
+            Sector(
+                id=1,
+                celdas={
+                    (x, y)
+                    for x in range(6)
+                    for y in range(6)
+                },
+            )
+        ],
+    )
+
+    original = DronReactivo(
+        id_dron=1,
+        posicion=(2, 0),
+        bateria=25.0,
+    )
+
+    sustituto = DronReactivo(
+        id_dron=2,
+        posicion=(1, 0),
+        bateria=90.0,
+        estado_operativo=EstadoOperativo.RESERVA,
+    )
+
+    coordinador = crear_coordinador(
+        "pizarron",
+        entorno.sectores,
+    )
+
+    coordinador.fijar_sector(original.id, 1, 0)
+
+    controlador = ControladorRelevos(
+        entorno=entorno,
+        gestor_energia=GestorEnergia(),
+        coordinador=coordinador,
+    )
+
+    assert controlador.iniciar(
+        original,
+        [sustituto],
+        paso=0,
+    )
+
+    drones = [original, sustituto]
+
+    for paso in range(1, 5):
+        coordinador.paso(paso, drones)
+        controlador.avanzar(drones, paso)
+        controlador.avanzar_recargas(drones)
+
+    assert controlador.completados == 1
+    assert original.posicion == (0, 0)
+
+    bateria_inicial = original.bateria
+
+    controlador.avanzar_recargas(drones)
+
+    assert original.bateria > bateria_inicial

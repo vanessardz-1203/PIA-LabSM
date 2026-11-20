@@ -50,6 +50,8 @@ class ControladorRelevos:
         self.relevos: dict[int, RelevoActivo] = {}
         self.completados = 0
         self.fallidos = 0
+        self.drones_recargando = {}
+        self.recargas_completadas = 0
 
     def iniciar(
         self,
@@ -249,4 +251,66 @@ class ControladorRelevos:
                     relevo.fase = FaseRelevo.COMPLETADO
                     self.completados += 1
 
+                    # Preparar ruta de regreso del dron original.
+                    ruta_recarga = self.gestor.ruta_recarga(
+                        original.posicion,
+                        self.entorno,
+                    )
+
+                    if ruta_recarga:
+                        self.drones_recargando[original.id] = {
+                            "ruta": ruta_recarga,
+                            "indice": 0,
+                        }
+
                     del self.relevos[original_id]
+
+    def avanzar_recargas(
+        self,
+        drones: list[DronBase],
+    ) -> None:
+        """
+        Mueve drones relevados hacia una estación de recarga.
+
+        Cada llamada representa un tick:
+        - Avanza como máximo una celda.
+        - Recarga progresivamente al llegar.
+        - Devuelve el dron a RESERVA al completar su batería.
+        """
+
+        por_id = {dron.id: dron for dron in drones}
+
+        for dron_id, datos in list(self.drones_recargando.items()):
+            dron = por_id.get(dron_id)
+
+            if dron is None:
+                del self.drones_recargando[dron_id]
+                continue
+
+            ruta = datos["ruta"]
+            indice = datos["indice"]
+
+            # FASE 1: Viajar hacia la estación.
+            if indice < len(ruta) - 1:
+                siguiente = ruta[indice + 1]
+                anterior = dron.posicion
+
+                dron.estado_operativo = EstadoOperativo.ACTIVO
+                dron.actuar(siguiente, self.entorno)
+
+                if dron.posicion == anterior:
+                    self.fallidos += 1
+                    del self.drones_recargando[dron_id]
+                    continue
+
+                datos["indice"] += 1
+                continue
+
+            # FASE 2: Recargar en la estación.
+            if dron.posicion in self.entorno.recargas:
+                self.gestor.recargar(dron, self.entorno)
+
+                if dron.bateria >= dron.bateria_max:
+                    dron.estado_operativo = EstadoOperativo.RESERVA
+                    self.recargas_completadas += 1
+                    del self.drones_recargando[dron_id]
