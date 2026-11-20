@@ -211,3 +211,7 @@ run: docker run --rm pia-drones:ci python -m compileall -q Construccion_de_entor
 ```
 
 (Opcional) en `docs/guia_desarrollo.md`, sección 3.3, el mismo cambio al `compileall`. También convendría un `.gitignore` con `__pycache__/` y `.pytest_cache/`.
+
+## Conclusión individual 
+
+En esta parte del proyecto me tocó que los drones se comunicaran y se pusieran de acuerdo sobre qué sector vigilar cada uno, y lo que más me llevo es que no basta con que se manden mensajes: también necesitan una regla clara para decidir, porque si no terminan varios en el mismo lugar y otras zonas se quedan sin vigilancia. Comparé dos formas de comunicarse, el pizarrón compartido y la mensajería directa, y vi que si la red funciona bien las dos dan prácticamente lo mismo; la diferencia aparece cuando se pierden mensajes o tardan en llegar, y ahí el retraso fue lo que más complicó que los drones se reacomodaran cuando uno fallaba. En general, coordinarlos sí mejoró la vigilancia y evitó que anduvieran repitiendo recorridos, y el pizarrón me pareció más eficiente porque necesita muchos menos mensajes, aunque la mensajería no depende de un punto central. Quedaron cosas pendientes, como probar qué pasa si el pizarrón se cae o integrar la batería y los relevos con el resto del sistema, pero me llevo que una buena coordinación depende tanto de las reglas como de qué tan confiable sea la comunicación.
