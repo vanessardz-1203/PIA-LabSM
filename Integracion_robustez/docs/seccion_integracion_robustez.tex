@@ -1,0 +1,38 @@
+% Sección lista para insertar dentro del cuerpo del documento institucional.
+% No incorpora paquetes ni modifica el preámbulo de la plantilla.
+% No afirma que se hayan ejecutado pruebas de integración completas.
+\section{Integración y condiciones de robustez del sistema}
+
+La integración del sistema multiagente de vigilancia industrial requiere articular el entorno, la arquitectura de los drones, la coordinación de sectores y la gestión energética. El propósito es preservar la cobertura de vigilancia, especialmente en sectores prioritarios, incluso cuando un dron queda inactivo o la comunicación presenta perturbaciones. La presente sección documenta la relación entre los componentes existentes y distingue los mecanismos implementados de las pruebas integrales que aún no cuentan con evidencia experimental verificada.
+
+\subsection{Articulación de componentes}
+
+El módulo de entorno representa una instalación industrial mediante una cuadrícula de $40\times30$ celdas, con edificios, estaciones de recarga y cuatro sectores. La visibilidad se calcula considerando obstáculos; a partir de ella se obtienen cobertura, puntos ciegos y redundancia. Los agentes implementan el ciclo percepción--decisión--acción con arquitecturas reactiva y basada en modelos. La segunda utiliza memoria de observaciones y planificación mediante búsqueda en anchura (BFS).
+
+Sobre estos elementos, la coordinación permite asignar y liberar sectores, publicar informes periódicos y solicitar o confirmar relevos. El módulo energético determina cuándo se necesita un sustituto y modela su desplazamiento y el regreso del agente relevado hacia una estación de recarga. La operación conjunta exige respetar el orden de actualización de las comunicaciones y los movimientos, así como evitar desplazar dos veces al mismo agente dentro de un paso.
+
+\subsection{Condiciones de robustez relevantes}
+
+\begin{itemize}
+    \item \textbf{Falla de un dron:} la inactividad puede dejar un sector sin cobertura. El coordinador dispone de detección por ausencia de informes y expiración de asignaciones, mecanismo que permite reconsiderar la distribución de sectores.
+    \item \textbf{Pérdida y retraso de mensajes:} pueden provocar decisiones basadas en información incompleta o desactualizada. El canal implementado permite parametrizar pérdida y retraso. Se registra la recepción de informes para evitar expiraciones prematuras en presencia de latencia.
+    \item \textbf{Caída del pizarrón:} al tratarse de un mecanismo compartido, puede existir un punto único de falla. El módulo expone un estado de disponibilidad, pero no se identificó una evaluación experimental integral de su caída.
+    \item \textbf{Obstáculos dinámicos:} podrían bloquear rutas y modificar temporalmente las zonas observables. Aunque se dispone de detección de transitabilidad y rutas BFS, esta condición aún no tiene una validación integral documentada.
+    \item \textbf{Batería baja y relevos:} el sistema cuenta con selección de sustitutos y un controlador de solicitudes, confirmación, desplazamiento y recarga. Se requieren mediciones integrales para cuantificar su efecto sobre la continuidad de cobertura.
+\end{itemize}
+
+\subsection{Justificación a partir de la evidencia consolidada}
+
+La comparación documentada de la Práctica 1, con cuatro drones, reportó una cobertura acumulada de $89.10\,\%$ con agentes basados en modelos, frente a $54.24\,\%$ con agentes reactivos. Esta diferencia respalda el uso de memoria y planificación para reducir áreas no visitadas, aunque la cobertura instantánea media fue de $19.32\,\%$ y $22.09\,\%$, respectivamente. Por tanto, la elección responde prioritariamente a la cobertura acumulada y a la vigilancia sostenida, y no a una superioridad en todas las métricas.
+
+En la Práctica 2, el resumen de resultados registra, para ocho drones, $1.57$ mensajes por paso con pizarrón y $11.03$ con mensajería directa. La menor carga de comunicación justifica considerar el pizarrón cuando existe una infraestructura central confiable. Sin embargo, su posible punto único de falla impide afirmar que sea superior en robustez sin evaluar una interrupción de dicho componente.
+
+\subsection{Métricas y limitaciones de la integración}
+
+Las métricas pertinentes son cobertura instantánea, cobertura de sectores prioritarios, tiempo sin vigilancia, tiempo de recuperación tras una falla, redundancia de cobertura, asignaciones duplicadas, relevos completados y fallidos, y mensajes por paso. El tiempo de recuperación requiere definir antes de medir un umbral verificable de servicio recuperado.
+
+El repositorio contiene resultados y pruebas por módulos, pero la revisión documental no acredita una ejecución de extremo a extremo que reúna entorno, agentes, coordinación, relevos y perturbaciones dinámicas en un único experimento. Asimismo, el módulo de coordinación utiliza un adaptador para que los agentes atiendan la asignación de sectores. Estas limitaciones deben informarse para distinguir los resultados realmente observados de las condiciones de evaluación propuestas.
+
+\subsection{Síntesis}
+
+La robustez del sistema no depende únicamente de recuperar un dron averiado, sino también de conservar la consistencia de las asignaciones, limitar las consecuencias de los fallos de comunicación y sostener la vigilancia durante los relevos. Los mecanismos documentados proporcionan una base para esta integración; la confirmación cuantitativa de su funcionamiento conjunto requiere evidencia experimental específica que no debe darse por realizada sin ejecución y registro.
